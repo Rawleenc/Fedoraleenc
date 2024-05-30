@@ -167,13 +167,11 @@
       shell: "[[ -z $(which node) ]] && volta install node || exit 0"
     - name: Initialize Rust
       shell: "[[ -z $(which cargo) ]] && rustup-init || exit 0"
-    - name: Enable and start services
-      systemd:
-        name: "{{ item }}"
+    - name: Enable and start libvirtd service
+      systemd_service:
+        name: libvirtd
         state: started
-        enabled: yes
-      loop:
-        - libvirtd
+        enabled: true
       become: true
     - name: Add user to groups
       user:
@@ -181,19 +179,19 @@
         groups:
           - libvirt
           - video
-          - audio 
-          - bin 
-          - colord 
-          - daemon 
-          - dbus 
-          - flatpak 
-          - gamemode 
-          - games 
-          - input 
-          - kvm 
-          - pipewire 
-          - polkitd 
-          - qemu 
+          - audio
+          - bin
+          - colord
+          - daemon
+          - dbus
+          - flatpak
+          - gamemode
+          - games
+          - input
+          - kvm
+          - pipewire
+          - polkitd
+          - qemu
           - render
         append: yes
       become: true
