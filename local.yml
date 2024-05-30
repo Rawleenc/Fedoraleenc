@@ -84,6 +84,7 @@
         name:
           - "@virtualization"
           - "@multimedia"
+          - "@Development tools"
           - vim
           - papirus-icon-theme
           - jetbrains-mono-fonts-all
