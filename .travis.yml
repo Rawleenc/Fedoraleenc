@@ -1,0 +1,15 @@
+---
+language: python
+python: "3"
+sudo: false
+addons:
+  apt:
+    packages:
+    - python-pip
+
+install:
+  - pip install ansible
+  - ansible --version
+
+script:
+  - ansible-playbook playbook.yaml -K
