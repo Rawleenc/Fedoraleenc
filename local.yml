@@ -30,18 +30,6 @@
           max_parallel_downloads=10
           countme=False
       become: true
-    - name: Add brave browser repository
-      copy:
-        dest: /etc/yum.repos.d/brave-browser.repo
-        content: |
-          [brave-browser]
-          name=Brave Browser
-          enabled=1
-          gpgcheck=1
-          autorefresh=1
-          baseurl=https://brave-browser-rpm-release.s3.brave.com/$basearch
-          gpgkey=https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
-      become: true
     - name: Add visual studio code repository
       copy:
         dest: /etc/yum.repos.d/vscode.repo
@@ -65,11 +53,6 @@
           autorefresh=1
           baseurl=https://repo.nordvpn.com/yum/nordvpn/centos/x86_64
           gpgkey=https://repo.nordvpn.com/gpg/nordvpn_public.asc
-      become: true
-    - name: Import brave browser repository key
-      rpm_key:
-        state: present
-        key: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
       become: true
     - name: Import visual studio code repository key
       rpm_key:
@@ -113,7 +96,6 @@
           - zsh
           - git
           - dnf-plugins-core
-          - brave-browser
           - gnome-console
           - code
           - fastfetch
