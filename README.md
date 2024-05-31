@@ -6,7 +6,7 @@ This repository contains my Fedora Workstation post-installation Ansible playboo
 
 First, install Ansible:
 ```bash
-sudo dnf install ansible
+sudo dnf install ansible-core
 ```
 
 Then, run the following command:
