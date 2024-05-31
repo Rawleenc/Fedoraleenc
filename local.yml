@@ -171,7 +171,6 @@
         name: https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm
         state: present
       become: true
-
     - name: Check if volta is installed
       shell: which volta
       register: volta_installed
