@@ -3,6 +3,18 @@
   hosts: 127.0.0.1
   connection: local
   tasks:
+    - name: Configure sysctl
+      copy:
+        dest: /etc/sysctl.d/custom.conf
+        content: |
+          vm.swappiness = 10
+          kernel.sysrq = 1
+      become: true
+    - name: Configure environment variables
+      copy:
+        dest: /etc/environment
+        content: |
+          JAVA_HOME=/usr/lib/jvm/java
     - name: Configure dnf
       copy:
         dest: /etc/dnf/dnf.conf
