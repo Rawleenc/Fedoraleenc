@@ -55,21 +55,31 @@
           gpgkey=https://repo.nordvpn.com/gpg/nordvpn_public.asc
       become: true
     - name: Import brave browser repository key
-      shell: rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
+      rpm_key:
+        state: present
+        key: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
       become: true
     - name: Import visual studio code repository key
-      shell: rpm --import https://packages.microsoft.com/keys/microsoft.asc
+      rpm_key:
+        state: present
+        key: https://packages.microsoft.com/keys/microsoft.asc
       become: true
-    - name: Install rpm fusion free
-      shell: dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
-      become: true
-    - name: Install rpm fusion nonfree
-      shell: dnf install https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+    - name: Import nordvpn repository key
+      rpm_key:
+        state: present
+        key: https://repo.nordvpn.com/gpg/nordvpn_public.asc
       become: true
     - name: Up-to-date packages
       dnf:
         name: "*"
         state: latest
+      become: true
+    - name: Install RPM Fusion repositories
+      dnf:
+        name:
+          - https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ansible_distribution_major_version}}.noarch.rpm
+          - https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ansible_distribution_major_version}}.noarch.rpm
+        state: present
       become: true
     - name: Unwanted packages
       dnf:
@@ -161,12 +171,31 @@
         name: https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm
         state: present
       become: true
+
+    - name: Check if volta is installed
+      shell: which volta
+      register: volta_installed
+      failed_when: false
+      changed_when: volta_installed.rc != 0
     - name: Install volta.sh
-      shell: "[[ -z $(which volta) ]] && curl https://get.volta.sh | bash || exit 0"
+      shell: curl https://get.volta.sh | bash
+      when: volta_installed.rc != 0
+    - name: Check if node is installed
+      shell: which node
+      register: node_installed
+      failed_when: false
+      changed_when: node_installed.rc != 0
     - name: Install node
-      shell: "[[ -z $(which node) ]] && volta install node || exit 0"
+      shell: volta install node
+      when: node_installed.rc != 0
+    - name: Check if Rust is installed
+      shell: which cargo
+      register: rust_installed
+      failed_when: false
+      changed_when: rust_installed.rc != 0
     - name: Initialize Rust
-      shell: "[[ -z $(which cargo) ]] && rustup-init || exit 0"
+      shell: rustup-init -y
+      when: rust_installed.rc != 0
     - name: Enable and start libvirtd service
       systemd_service:
         name: libvirtd
