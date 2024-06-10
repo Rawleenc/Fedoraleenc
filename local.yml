@@ -7,8 +7,11 @@
       copy:
         dest: /etc/sysctl.d/custom.conf
         content: |
-          vm.swappiness = 10
           kernel.sysrq = 1
+          vm.swappiness = 180
+          vm.watermark_boost_factor = 0
+          vm.watermark_scale_factor = 125
+          vm.page-cluster = 0
       become: true
     - name: Configure environment variables
       copy:
@@ -42,27 +45,10 @@
           baseurl=https://packages.microsoft.com/yumrepos/vscode
           gpgkey=https://packages.microsoft.com/keys/microsoft.asc
       become: true
-    - name: Add nordvpn repository
-      copy:
-        dest: /etc/yum.repos.d/nordvpn.repo
-        content: |
-          [nordvpn]
-          name=Nordvpn
-          enabled=1
-          gpgcheck=1
-          autorefresh=1
-          baseurl=https://repo.nordvpn.com/yum/nordvpn/centos/x86_64
-          gpgkey=https://repo.nordvpn.com/gpg/nordvpn_public.asc
-      become: true
     - name: Import visual studio code repository key
       rpm_key:
         state: present
         key: https://packages.microsoft.com/keys/microsoft.asc
-      become: true
-    - name: Import nordvpn repository key
-      rpm_key:
-        state: present
-        key: https://repo.nordvpn.com/gpg/nordvpn_public.asc
       become: true
     - name: Up-to-date packages
       dnf:
@@ -70,19 +56,19 @@
         state: latest
       become: true
     - name: Install RPM Fusion repositories
-      dnf:
-        name:
-          - https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ansible_distribution_major_version}}.noarch.rpm
-          - https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ansible_distribution_major_version}}.noarch.rpm
-        state: present
+      shell: |
+        dnf install \
+          https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
+          https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
       become: true
-    - name: Unwanted packages
+    - name: Install RPM fusion additionnal packages
       dnf:
         name:
-          - rhythmbox
-          - gnome-terminal
-        state: absent
-        autoremove: true
+          - rpmfusion-free-appstream-data
+          - rpmfusion-nonfree-appstream-data
+          - rpmfusion-free-release-tainted
+          - rpmfusion-nonfree-release-tainted
+        state: present
       become: true
     - name: Wanted packages
       dnf:
@@ -90,6 +76,7 @@
           - "@virtualization"
           - "@multimedia"
           - "@Development tools"
+          - "@Sound and Video"
           - vim
           - papirus-icon-theme
           - jetbrains-mono-fonts-all
@@ -110,25 +97,37 @@
           - java-11-openjdk-javadoc
           - java-11-openjdk-jmods
           - obs-studio
-          - "google-noto-*"
-          - "google-roboto-*"
-          - bitstream-vera-fonts-all
+          - "google-roboto*"
+          - "mozilla-fira*"
           - dejavu-fonts-all
-          - "google-droid-*"
-          - fira-code-fonts
-          - "fontawesome*"
-          - liberation-narrow-fonts
           - liberation-fonts
+          - liberation-narrow-fonts
+          - google-noto-emoji-fonts
+          - google-noto-color-emoji-fonts
+          - google-noto-sans-fonts
+          - google-noto-serif-fonts
+          - "adobe-source-code*"
+          - adobe-source-sans-pro-fonts
+          - adobe-source-serif-pro-fonts
+          - fontawesome-fonts-all
+          - google-droid-fonts-all
+          - bitstream-vera-fonts-all
+          - fira-code-fonts
+          - cascadia-fonts-all
+          - intel-one-mono-fonts
           - curl
           - cabextract
           - xorg-x11-font-utils
           - fontconfig
-          - rpmfusion-free-appstream-data
-          - rpmfusion-nonfree-appstream-data
-          - rpmfusion-free-release-tainted
-          - rpmfusion-nonfree-release-tainted
+          - mkfontscale
+          - mkfontdir
+          - xset
           - dnf-utils
-          - nordvpn
+          - p7zip
+          - p7zip-plugins
+          - unrar
+          - unace
+          - lha
           - gstreamer1-plugins-base
           - gstreamer1-plugins-good
           - gstreamer1-plugins-bad-free
@@ -139,9 +138,15 @@
           - gstreamer1-plugins-ugly
           - libdvdcss
           - gstreamer1-plugin-openh264
+          - gnome-tweaks
           - gnome-extensions-app
-          - gnome-shell-extension-dash-to-dock
           - gnome-shell-extension-appindicator
+          - gnome-shell-extension-dash-to-dock
+          - gnome-shell-extension-caffeine
+          - gnome-shell-extension-gsconnect
+          - nautilus-gsconnect
+          - webextension-gsconnect
+          - btrfs-assistant
         state: present
       become: true
     - name: Wanted packages (erasing existing alternatives)
@@ -157,38 +162,24 @@
           - intel-gpu-tools
           - mesa-dri-drivers
           - mesa-va-drivers-freeworld
+          - mesa-vdpau-drivers-freeworld
         state: present
         allowerasing: true
+      become: true
+    - name: Wanted tainted firmware
+      dnf:
+        name:
+          - "*-firmware"
+        enablerepo: rpmfusion-nonfree-tainted
+        state: present
       become: true
     - name: Install microsoft fonts
       dnf:
         name: https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm
         state: present
       become: true
-    - name: Check if volta is installed
-      shell: which volta
-      register: volta_installed
-      failed_when: false
-      changed_when: volta_installed.rc != 0
     - name: Install volta.sh
-      shell: curl https://get.volta.sh | bash
-      when: volta_installed.rc != 0
-    - name: Check if node is installed
-      shell: which node
-      register: node_installed
-      failed_when: false
-      changed_when: node_installed.rc != 0
-    - name: Install node
-      shell: volta install node
-      when: node_installed.rc != 0
-    - name: Check if Rust is installed
-      shell: which cargo
-      register: rust_installed
-      failed_when: false
-      changed_when: rust_installed.rc != 0
-    - name: Initialize Rust
-      shell: rustup-init -y
-      when: rust_installed.rc != 0
+      shell: "[[ -z $(which volta) ]] && curl https://get.volta.sh | bash || exit 0"
     - name: Enable and start libvirtd service
       systemd_service:
         name: libvirtd
@@ -216,4 +207,12 @@
           - qemu
           - render
         append: yes
+      become: true
+    - name: Unwanted packages
+      dnf:
+        name:
+          - rhythmbox
+          - gnome-terminal
+        state: absent
+        autoremove: true
       become: true
