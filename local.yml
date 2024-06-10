@@ -18,6 +18,7 @@
         dest: /etc/environment
         content: |
           JAVA_HOME=/usr/lib/jvm/java
+      become: true
     - name: Configure dnf
       copy:
         dest: /etc/dnf/dnf.conf
