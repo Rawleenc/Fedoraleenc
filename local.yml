@@ -175,8 +175,7 @@
         state: present
       become: true
     - name: Install microsoft fonts
-      dnf:
-        name: https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm
+      shell: dnf install -y https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm
         state: present
       become: true
     - name: Install volta.sh
